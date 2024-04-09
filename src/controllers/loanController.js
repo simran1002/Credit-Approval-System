@@ -56,7 +56,6 @@ function calculateMonthlyInstallment(loanAmount, interestRate, tenure) {
     return monthlyInstallment;
 }
 
-// loanController.js
 
 async function createLoan(req, res) {
     try {
@@ -106,24 +105,74 @@ async function createLoan(req, res) {
 
 async function checkEligibility(customer_id, loan_amount, interest_rate, tenure) {
     // Implement logic to check eligibility based on credit score and other criteria
-    // You need to implement this logic
+    let eligibilityData = {};
+
+    try {
+        // Assuming you have functions to retrieve historical loan data and calculate credit score
+        const historicalLoanData = await retrieveHistoricalLoanData(customer_id);
+        const creditScore = calculateCreditScore(historicalLoanData);
+
+        // Check credit score against eligibility criteria
+        let approval = false;
+        let correctedInterestRate = interest_rate;
+        let monthly_installment = calculateMonthlyInstallment(loan_amount, interest_rate, tenure);
+
+        if (creditScore > 50) {
+            approval = true;
+        } else if (creditScore > 30) {
+            correctedInterestRate = Math.max(interest_rate, 12);
+            approval = true;
+        } else if (creditScore > 10) {
+            correctedInterestRate = Math.max(interest_rate, 16);
+            approval = true;
+        }
+
+        eligibilityData = {
+            customer_id: customer_id,
+            approval: approval,
+            interest_rate: interest_rate,
+            corrected_interest_rate: correctedInterestRate,
+            tenure: tenure,
+            monthly_installment: monthly_installment
+        };
+    } catch (error) {
+        console.error('Error checking eligibility:', error);
+        throw error; // Rethrow the error for the caller to handle
+    }
+
     return eligibilityData;
 }
 
+
 function insertLoanDetails(customer_id, loan_amount, interest_rate, tenure) {
     // Logic to insert loan details into the database and return the loanId
-    // You need to implement this logic
+    let loanId = null;
+
+    try {
+        // Assuming you have a function to insert data into the database
+        // Insert loan details into the database and get the inserted loan ID
+        loanId = insertLoanIntoDatabase(customer_id, loan_amount, interest_rate, tenure);
+    } catch (error) {
+        console.error('Error inserting loan details:', error);
+        throw error; // Rethrow the error for the caller to handle
+    }
+
     return loanId;
 }
 
 function calculateMonthlyInstallment(loanAmount, interestRate, tenure) {
     // Logic to calculate monthly installment based on loan amount, interest rate, and tenure
-    // You need to implement this calculation
+    const monthlyInterestRate = interestRate / 12 / 100; // Convert annual interest rate to monthly and percentage to decimal
+    const numberOfPayments = tenure * 12; // Convert tenure from years to months
+
+    // Calculate monthly installment using the formula for compound interest
+    const monthlyInstallment = loanAmount * monthlyInterestRate / (1 - Math.pow(1 + monthlyInterestRate, -numberOfPayments));
+
     return monthlyInstallment;
 }
 
-// loanController.js
 
+// loanController.js
 async function viewLoan(req, res) {
     try {
         const loanId = req.params.loan_id;
@@ -162,63 +211,7 @@ async function viewLoan(req, res) {
     }
 }
 
-async function makePayment(req, res) {
-    try {
-        const { customer_id, loan_id } = req.params;
-        const { payment_amount } = req.body;
-
-        // Logic to update loan repayment details in the database
-        // You need to implement this logic
-
-        // Example response
-        res.status(200).json({ message: 'Payment successful' });
-    } catch (error) {
-        console.error('Error making payment:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
-}
-
-// loanController.js
-
-async function viewStatement(req, res) {
-    try {
-        const { customer_id, loan_id } = req.params;
-
-        // Fetch loan details from the database
-        const loanDetails = await fetchLoanDetails(loan_id);
-
-        if (!loanDetails) {
-            return res.status(404).json({ error: 'Loan not found' });
-        }
-
-        // Check if the loan belongs to the specified customer
-        if (loanDetails.customer_id !== parseInt(customer_id)) {
-            return res.status(403).json({ error: 'Unauthorized access to loan statement' });
-        }
-
-        // Fetch repayment details for the loan
-        const repayments = await fetchRepaymentDetails(loan_id);
-
-        // Prepare loan statement data
-        const loanStatement = repayments.map(repayment => ({
-            customer_id: customer_id,
-            loan_id: loan_id,
-            principal: loanDetails.loan_amount,
-            interest_rate: loanDetails.interest_rate,
-            amount_paid: repayment.amount_paid,
-            monthly_installment: loanDetails.monthly_installment,
-            repayments_left: loanDetails.tenure - repayment.emis_paid
-        }));
-
-        res.status(200).json(loanStatement);
-    } catch (error) {
-        console.error('Error fetching loan statement:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
-}
-
 
 module.exports = {
-    checkEligibility, createLoan,viewLoan,
-    makePayment,viewStatement
+    checkEligibility, createLoan,viewLoan
 };

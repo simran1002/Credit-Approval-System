@@ -1,7 +1,6 @@
-// loanController.js
-
 const mysql = require('mysql2/promise');
 const dbConfig = require('../utils/dbConfig');
+const Loan = require('../models/Loan')
 
 async function checkEligibility(req, res) {
     try {

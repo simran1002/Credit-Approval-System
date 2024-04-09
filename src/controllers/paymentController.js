@@ -1,6 +1,6 @@
-// paymentController.js
-
-// Import any necessary modules or services
+const mysql = require('mysql2/promise');
+const dbConfig = require('../utils/dbConfig');
+const Loan = require('../models/Loan')
 
 async function makePayment(req, res, next) {
     try {

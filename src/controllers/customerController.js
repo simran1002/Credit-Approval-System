@@ -1,7 +1,6 @@
-// customerController.js
-
 const mysql = require('mysql2/promise');
 const dbConfig = require('../utils/dbConfig');
+const Customer = require('../models/Customer');
 
 async function registerCustomer(req, res) {
     try {
